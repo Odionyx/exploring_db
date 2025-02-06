@@ -17,7 +17,7 @@ public:
 
     Customer(void)= default;
     Customer(std::string& first_name_, std::string& last_name_, 
-             std::string& email_, long int& telephone_);
+             std::string& email_, std::string& telephone_);
     virtual ~Customer();
 private:
     pqxx::connection* con;
@@ -30,6 +30,7 @@ private:
     std::string first_name= "";
     std::string last_name= "";
     std::string email= "";
-    long int telephone= 0;
-    short count= 0;
+    std::string temp = "Qwerty";
+    std::string telephone= "";
+    int id= 0;
 };

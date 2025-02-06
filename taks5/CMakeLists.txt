@@ -19,4 +19,4 @@ target_compile_features(test_pq PRIVATE cxx_std_17)
 target_link_libraries(test_pq PRIVATE pqxx)
 
 # libpqxx
-# Доделываю...Прошу понять и дать немного времени!:)
+# Доделываю...Прошу понять и  ещё дать немного времени!:)

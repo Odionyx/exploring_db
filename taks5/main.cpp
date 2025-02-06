@@ -19,17 +19,19 @@ int main(int argc, char** argv){
     std::string first_name = "Qwer";
     std::string last_name = "Qwerty";
     std::string email = "qq@qq.qq";
-    long int telephone = 0101010101;
+    std::string telephone{ "1234567890"};
 
-    std::string first_name2 = "Abcd";
-    std::string last_name2 = "Abcde";
-    std::string email2 = "aaa@aaa.aaa";
-    long int telephone2 = 1010101010;
+    std::string first_name2 = "Abc";
+    std::string last_name2 = "Qwerty";
+    std::string email2 = "aaaa@qq.aa";
+    std::string telephone2{ "90987654321"};
 
     try{
-        Customer cust( first_name, last_name, email, telephone);
+        Customer cust{ first_name, last_name, email, telephone};
         cust.creates_tables();
-
+        cust.new_customer();
+        cust.add_phone_num();
+        cust.find_customer();
 
     }
     //catch (pqxx::sql_error e) {
