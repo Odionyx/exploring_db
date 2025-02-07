@@ -1,113 +1,110 @@
 #include "db_customer.h"
 #include <iostream>
 #include <tuple>
-
-Customer::Customer(std::string& first_name_, std::string& last_name_, 
-                   std::string& email_, std::string& telephone_){
-    this->con = new pqxx::connection(key);
-    this->first_name = first_name_;
-    this->last_name = last_name_;
-    this->email = email_;
-    this->telephone = telephone_;
-    std::cout<< "Welcome " << ++id<< std::endl;
+/*
+*/
+CustoManager::CustoManager( pqxx::connection& other): con{ other}{
+    std::cout << "Welcome "<< std::endl;
 }
 
-Customer::~Customer(){
-    this-> con-> ~connection();
+CustoManager::~CustoManager(){
     std::cout<< "~Goodbye "<< std::endl;
 }
 
-void Customer::creates_tables() {
-    pqxx::work tx{ *con };
+void CustoManager::createTables(){
+    pqxx::work tx{ con};
     tx.exec(
         "CREATE TABLE IF NOT EXISTS customer( "
             "id SERIAL PRIMARY KEY NOT NULL, "
             "first_name TEXT NOT NULL, "
             "last_name TEXT NOT NULL, "
-            "email TEXT NOT NULL); "
+            "email TEXT NOT NULL UNIQUE); "
         "CREATE TABLE IF NOT EXISTS phone_number("
             "id SERIAL PRIMARY KEY NOT NULL,"
-            "number VARCHAR(20),"
+            "number VARCHAR(20) UNIQUE,"
             "customer_id INTEGER NOT NULL "
             "REFERENCES customer(id) ON DELETE CASCADE); "
     );
     tx.commit();
 }
 
-void Customer::new_customer(){
-    pqxx::work tx{ *con};
+int CustoManager::addCustomer( const std::string& firstName, 
+                               const std::string& lastName, 
+                               const std::string& email){
+    pqxx::work tx{ con};
     tx.exec(
         "INSERT INTO customer( first_name, last_name, email) "
-        "VALUES( '" + first_name + "', '" + last_name + "', '" + email + "'); "
+        "VALUES( '"+tx.esc(firstName)+"', '"+tx.esc(lastName)+"', '"+tx.esc(email)+"'); "
+    );
+    int custId = tx.query_value< int>(
+            "SELECT id FROM customer "
+            "WHERE email LIKE '" + tx.esc(email) + "'; "
     );
     tx.commit();
+    return custId;
 }
 
-void Customer::add_phone_num(){
-    pqxx::work tx{ *con};
+void CustoManager::addPhoneNum( int customId, const std::string& phoneNumber){
+    pqxx::work tx{ con};
     tx.exec(
         "INSERT INTO phone_number( number, customer_id) "
-        "VALUES( '" + telephone + ""
-        "', '" + std::to_string(id) + "'); "
+        "VALUES( '"+ tx.esc(phoneNumber) +"', '"+ std::to_string(customId) +"'); "
     );
     tx.commit();
 }
 
-void Customer::change_customer(){
-    pqxx::work tx{ *con};
+void CustoManager::changeCustomer( int customId, const std::string& firstName,
+                    const std::string& lastName, const std::string& email){
+    pqxx::work tx{ con};
     tx.exec(
-        "UPDATE customer SET first_name= '" + first_name + "', "
-        "last_name= '" + last_name + "', email= '" + email + "'"
-        "WHERE id = "+ std::to_string(id) +"; "
+        "UPDATE customer SET first_name= '" + firstName + "', "
+        "last_name= '"+ tx.esc(lastName) +"', email= '"+ tx.esc(email) +"'"
+        "WHERE id = " + std::to_string(customId) +"; "
     );
     tx.commit();
 }
 
-void Customer::find_customer(){
-    pqxx::work tx{ *con};
-    auto results = tx.query< int, std::string, std::string, 
-                                  std::string, std::string>(
-        "SELECT c.id, c.first_name, c.last_name, c.email, pn.number "
-        "FROM customer c "
-        "JOIN phone_number pn ON c.id = pn.customer_id "
-        "WHERE c.first_name LIKE '" + temp + "' OR "
-              "c.last_name LIKE '" + temp + "' OR "
-              "c.email LIKE '" + temp + "' OR "
-              "pn.number LIKE '" + temp + "'; "
-    );
-    for (std::tuple<int, std::string, std::string, 
-                         std::string, std::string> row : results){
+int CustoManager::findCustomer( const std::string& email){
+    int custId = 0;
+    pqxx::work tx{ con};
+    auto results = tx.query< int, std::string, std::string,
+        std::string, std::string>(
+            "SELECT c.id, c.first_name, c.last_name, c.email, pn.number "
+            "FROM customer c JOIN phone_number pn ON c.id = pn.customer_id "
+            "WHERE c.email LIKE '" + tx.esc(email) + "'; "
+        );
+    for (std::tuple<int, std::string, std::string,
+        std::string, std::string> row : results) {
         std::cout << "ID: "     << std::get<0>(row)
-           << "\t first_name: " << std::get<1>(row)
-           << "\t last_name: "  << std::get<2>(row)
-           << "\t email: "      << std::get<3>(row)
-           << "\t number: "     << std::get<4>(row)<< std::endl;
+            << "\t first_name: "<< std::get<1>(row)
+            << "\t last_name: " << std::get<2>(row)
+            << "\t email: "     << std::get<3>(row)
+            << "\t number: "    << std::get<4>(row) << std::endl;
+        custId = std::get<0>(row);
     }
     tx.commit();
+    return custId;
 }
 
-void Customer::delete_phone_num(){
-    pqxx::work tx{ *con };
+void CustoManager::deletePhoneNum( const std::string& phoneNumber){
+    pqxx::work tx{ con};
     tx.exec(
-        "DELETE FROM phone_number "
-        "WHERE number LIKE '" + temp + "'; "
+        "DELETE FROM phone_number WHERE number LIKE '"+ 
+        tx.esc(phoneNumber) +"'; "
     );
     tx.commit();
 }
 
-void Customer::delete_customer(){
-    pqxx::work tx{ *con };
+void CustoManager::deleteCustomer( const std::string& email){
+    pqxx::work tx{ con};
     tx.exec(
-        "DELETE FROM customer"
-        "WHERE email LIKE '" + temp + "' ; "
+        "DELETE FROM customer WHERE email LIKE '"+ tx.esc(email) +"' ; "
     );
     tx.commit();
 }
 
-void Customer::delete_tables(){
-    pqxx::work tx{ *con };
-    tx.exec(
-        "DROP TABLE '" + temp + "' ; "
-    );
+void CustoManager::deleteTables( const std::string& table){
+    pqxx::work tx{ con};
+    tx.exec( "DROP TABLE "+ tx.esc(table) +" ; "); //CASCADE if need
     tx.commit();
 }

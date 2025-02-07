@@ -16,7 +16,7 @@ add_executable(${PROJECT_NAME} ${SOURCES} ${HEADERS})
 add_subdirectory("C:\\...\\libpqxx" build-pqxx)
 
 target_compile_features(test_pq PRIVATE cxx_std_17)
-target_link_libraries(test_pq PRIVATE pqxx)
+target_link_libraries(test_pq PRIVATE pqxx  libpqxx::pqxx)
 
-# libpqxx
-# Доделываю...Прошу понять и  ещё дать немного времени!:)
+# ## Thanks for the tutorial!
+# :)
